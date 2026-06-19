@@ -91,8 +91,8 @@ DASH_URL=${DASH_URL:-"http://${PUBLIC_IP}:8000"}
 read -p "Masukkan Interval Bulk Reminder (menit) [10]: " BULK_MIN < /dev/tty
 BULK_MIN=${BULK_MIN:-"10"}
 
-read -p "Masukkan Mikrotik IP/Host [192.168.30.1]: " MK_HOST < /dev/tty
-MK_HOST=${MK_HOST:-"192.168.30.1"}
+read -p "Masukkan Mikrotik IP/Host (Publik/VPN) [10.10.10.1]: " MK_HOST < /dev/tty
+MK_HOST=${MK_HOST:-"10.10.10.1"}
 
 read -p "Masukkan Mikrotik Username [admin]: " MK_USER < /dev/tty
 MK_USER=${MK_USER:-"admin"}

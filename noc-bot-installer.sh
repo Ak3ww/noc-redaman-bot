@@ -48,8 +48,8 @@ DASH_URL=${DASH_URL:-"http://${PUBLIC_IP}:8000"}
 read -p "Masukkan Interval Bulk Reminder (menit) [10]: " BULK_MIN < /dev/tty
 BULK_MIN=${BULK_MIN:-"10"}
 
-read -p "Masukkan Mikrotik IP/Host [192.168.30.1]: " MK_HOST < /dev/tty
-MK_HOST=${MK_HOST:-"192.168.30.1"}
+read -p "Masukkan Mikrotik IP/Host (Publik/VPN) [10.10.10.1]: " MK_HOST < /dev/tty
+MK_HOST=${MK_HOST:-"10.10.10.1"}
 
 read -p "Masukkan Mikrotik Username [admin]: " MK_USER < /dev/tty
 MK_USER=${MK_USER:-"admin"}
@@ -61,7 +61,7 @@ MK_PASS=${MK_PASS:-""}
 # 3. Ekstrak Embedded Payload
 echo -e "\n${BLUE}[3/8] Mengekstrak file aplikasi NOC Redaman...${NC}"
 cat << 'EOF' | base64 -d | tar -xzf -
-H4sIAKEuNWoC/+y923IjSZIo1s9l1v8QjT49AHqAJO4kUc2aYRVZVdxmkVyS1TMjNoVJAAkii4lL
+H4sIAHgwNWoC/+y923IjSZIo1s9l1v8QjT49AHqAJO4kUc2aYRVZVdxmkVyS1TMjNoVJAAkii4lL
 ZyaK5GBgtg/aNVtpj1a729LD2jkazdqRmcykF5nWjul7+ge0nyB3j4jMiLwBIKv6sl3oC4FMD48I
 D48Idw8Pd2PD2Pj1iXn70jL7lvvRe/lU+Cftb6VSr4ff8Xm1UqtWP2K3H30Pn5nnmy5U/9HP81Pb
 ZCPfHlk71c2t6larWdneMur1SqXRfPTRh8+//09v4jhWz5+4xvTufdWBk7rVaiXP/2q91dhsfVRt

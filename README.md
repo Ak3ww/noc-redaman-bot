@@ -1,69 +1,56 @@
-# NOC Bot Redaman & Dashboard - Standalone Installer
+# NOC Bot Redaman & Dashboard 🚀
 
-Sistem ini memantau redaman pelanggan (Optical Power RX) dari OLT GPON/EPON (HSGQ & VSOL) dan mengirimkan notifikasi peringatan secara real-time ke NOC via Telegram. Dilengkapi juga dengan Web Dashboard interaktif.
-
-Untuk mempermudah proses deployment ke **Oracle Cloud Free Tier (Ubuntu VPS)** agar berjalan 24/7 secara gratis, kami telah membuat paket **Standalone Auto Installer** bernama `noc-bot-installer.sh`.
+Sistem pemantau redaman pelanggan (Optical Power RX) dari OLT (HSGQ & VSOL & GGCLINK). Mengirimkan notifikasi peringatan (*CRITICAL* & *WARNING*) secara real-time ke NOC via Telegram. Dilengkapi Web Dashboard interaktif.
 
 ---
 
-## ⚡ Deployment Cepat (1 atau 2 Command)
+## ⚡ Instalasi Sangat Mudah (Plug-and-Play)
 
-Anda hanya memerlukan file **`noc-bot-installer.sh`** untuk di-upload ke VPS Anda. File ini berukuran sangat kecil (~290 KB) karena di dalamnya sudah terkompresi dan ter-encode seluruh kode program backend (Python), frontend (React HTML/JS/CSS), dan file konfigurasi.
+Sistem ini didesain agar sangat ramah pemula. Anda **TIDAK PERLU** melakukan pengaturan database atau service secara manual. Cukup jalankan *Installer* otomatis yang sudah kami sediakan!
 
-### Langkah 1: Transfer Installer ke VPS
-Upload file `noc-bot-installer.sh` ke VPS Anda menggunakan SFTP (FileZilla/WinSCP) atau melalui perintah SCP:
+### Langkah 1: Clone Repository ke VPS
+Buka terminal VPS Anda (Ubuntu/Debian), lalu jalankan perintah ini untuk mengunduh seluruh sistem:
 ```bash
-scp -i path_to_key.key noc-bot-installer.sh ubuntu@IP_PUBLIC_VPS:/home/ubuntu/
+git clone https://github.com/Ak3ww/noc-redaman-bot.git
+cd noc-redaman-bot
 ```
 
-### Langkah 2: Jalankan Installer
-Masuk ke VPS via SSH, berikan izin eksekusi, dan jalankan script:
+### Langkah 2: Jalankan Auto Installer
+Di dalam folder tersebut, jalankan file instalasi:
 ```bash
-ssh -i path_to_key.key ubuntu@IP_PUBLIC_VPS
-chmod +x noc-bot-installer.sh
-./noc-bot-installer.sh
+bash noc-bot-installer.sh
 ```
 
-**Selesai!** Script akan mendeteksi IP publik secara otomatis, meminta input token Telegram bot, membuat database SQLite, mendaftarkan layanan background (systemd untuk bot & collector), memasang PM2, serta langsung menyalakan dashboard web di port `8000`.
+**Selesai!** Anda hanya tinggal duduk manis. 
+Terminal akan memunculkan *Wizard* interaktif untuk meminta:
+1. **Telegram Token & Chat ID**
+2. **Mikrotik IP & Credentials**
 
----
+Setelah Anda mengisi data tersebut, script akan bekerja otomatis 100%:
+- Menginstal Python & Node.js.
+- Membuat database SQLite dan mendaftarkan OLT default.
+- Menjalankan `collector.py` dan `telegram_bot.py` sebagai layanan background (*Systemd*).
+- Menjalankan Dashboard Web menggunakan `pm2`.
+- Membuka port 8000 di Firewall iptables.
 
-## 📂 Mengimpor Database Lama (Opsional - Sangat Direkomendasikan)
-Agar riwayat grafik redaman, konfigurasi custom, dan cache nama pelanggan tidak hilang dari server lokal:
-1. Matikan sementara service collector di VPS:
-   ```bash
-   sudo systemctl stop noc-collector
-   ```
-2. Upload file database lokal Anda (`C:\BotRedaman\backend\redaman.db`) ke folder instalasi di VPS (misalnya `/home/ubuntu/redaman.db`).
-3. Jalankan kembali service collector:
-   ```bash
-   sudo systemctl start noc-collector
-   ```
+Di akhir proses, Anda akan mendapatkan URL cantik untuk mengakses Dashboard Web Anda!
 
 ---
 
 ## 🛠️ Perintah Pengendalian Layanan di VPS
 
-Semua layanan diatur menggunakan systemd dan PM2 agar secara otomatis menyala kembali jika VPS reboot.
+Semua layanan diatur agar otomatis menyala kembali jika VPS reboot/mati lampu.
 
 ### 🖥️ Dashboard Web (PM2)
-* **Cek status dashboard**: `pm2 status`
-* **Melihat log dashboard**: `pm2 logs noc-dashboard`
-* **Restart dashboard**: `pm2 restart noc-dashboard`
+* **Cek status**: `pm2 status`
+* **Restart**: `pm2 restart noc-dashboard`
 
-### 🐍 Backend Engine (Collector & Telegram Bot - Systemd)
+### 🐍 Backend Engine (Systemd)
 * **Cek status Collector**: `sudo systemctl status noc-collector`
 * **Cek status Bot Telegram**: `sudo systemctl status noc-telegram-bot`
-* **Melihat log real-time Collector**: `sudo journalctl -u noc-collector -f`
-* **Melihat log real-time Bot Telegram**: `sudo journalctl -u noc-telegram-bot -f`
+* **Cek log error**: `cat system.log`
 * **Restart services**:
   ```bash
   sudo systemctl restart noc-collector
   sudo systemctl restart noc-telegram-bot
   ```
-
----
-
-## 🔒 Catatan Keamanan & Firewall
-1. **Oracle Cloud VCN**: Pastikan Anda membuka port masuk **`8000`** di Security List Virtual Cloud Network (VCN) Oracle Cloud.
-2. **SNMP Access Control**: Jika OLT VSOL berada di jaringan lokal komputer kantor (`192.168.30.6`), lakukan *port forwarding* port SNMP `161` (UDP) di router kantor agar VPS dapat menjangkaunya lewat IP publik kantor Anda. Batasi akses pengiriman data UDP port 161 di router kantor hanya menerima request dari IP Publik VPS Oracle Anda untuk keamanan maksimal.

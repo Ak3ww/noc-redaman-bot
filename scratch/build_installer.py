@@ -83,7 +83,7 @@ echo -e "\\n${BLUE}[2/9] Setup Konfigurasi Token, Mikrotik & Chat ID...${NC}"
 
 TELE_TOKEN="8773632704:AAFschVyWAyGIwGyjU5mwt1xDlMs3I-NqGc"
 TELE_CHAT_ID="298223450"
-DASH_DOMAIN="noc.euginemediagroup.com"
+DASH_DOMAIN="bot.euginemediagroup.site"
 DASH_URL="https://${DASH_DOMAIN}"
 BULK_MIN="10"
 MK_HOST="103.157.79.178"
@@ -386,9 +386,7 @@ server {
 EOF_NGINX
 
 # Konfigurasi Nginx untuk LibreNMS
-# Asumsi LibreNMS berjalan di subdomain 'nms.' dari DASH_DOMAIN, atau domain lain.
-# Untuk saat ini kita set LIBRE_DOMAIN dengan menambahkan prefix 'nms.' secara otomatis.
-LIBRE_DOMAIN="nms.${DASH_DOMAIN}"
+LIBRE_DOMAIN="nms.euginemediagroup.site"
 
 cat <<EOF_NGINX | sudo tee /etc/nginx/sites-available/${LIBRE_DOMAIN} > /dev/null
 server {

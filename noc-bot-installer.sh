@@ -39,7 +39,7 @@ echo -e "\n${BLUE}[2/9] Setup Konfigurasi Token, Mikrotik & Chat ID...${NC}"
 
 TELE_TOKEN="8773632704:AAFschVyWAyGIwGyjU5mwt1xDlMs3I-NqGc"
 TELE_CHAT_ID="298223450"
-DASH_DOMAIN="noc.euginemediagroup.com"
+DASH_DOMAIN="bot.euginemediagroup.site"
 DASH_URL="https://${DASH_DOMAIN}"
 BULK_MIN="10"
 MK_HOST="103.157.79.178"
@@ -51,7 +51,7 @@ echo -e "${GREEN}✔ Semua konfigurasi berhasil di-set secara otomatis.${NC}"
 # 3. Ekstrak Embedded Payload
 echo -e "\n${BLUE}[3/8] Mengekstrak file aplikasi NOC Redaman...${NC}"
 cat << 'EOF' | base64 -d | tar -xzf -
-H4sIAMPmWmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
+H4sIAHboWmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
 JorkUDCbhzNjNrs9Ozsz2n0YO7O9PXbWbM32vKzt2LHd39EP7HzCuntEZEbkDWDdWtUq6EIgM+7h
 7uHu4RdzzVz71Yl189S2hrb/wRv51Pgn72+ttr4Rf8fn9Vqj3viA3XzwFj6zILR86P6Dn+en8YCN
 Q2dst+rbDzbq2/X6g22zVtv+vLG5vvLB+8+f/WcwcV17EE58c3r7pvpApN7a2srG//p6Y7vR+KC+
@@ -10967,9 +10967,7 @@ server {
 EOF_NGINX
 
 # Konfigurasi Nginx untuk LibreNMS
-# Asumsi LibreNMS berjalan di subdomain 'nms.' dari DASH_DOMAIN, atau domain lain.
-# Untuk saat ini kita set LIBRE_DOMAIN dengan menambahkan prefix 'nms.' secara otomatis.
-LIBRE_DOMAIN="nms.${DASH_DOMAIN}"
+LIBRE_DOMAIN="nms.euginemediagroup.site"
 
 cat <<EOF_NGINX | sudo tee /etc/nginx/sites-available/${LIBRE_DOMAIN} > /dev/null
 server {

@@ -123,12 +123,26 @@ cat <<EOF > config.json
 EOF
 echo -e "${GREEN}✔ config.json berhasil dibuat.${NC}"
 
-# 4. Update Sistem & Install Paket Dasar
-echo -e "\\n${BLUE}[1/8] Instalasi dependensi sistem (Python3, pip, Node.js)...${NC}"
-sudo apt-get update -y
-sudo apt-get install -y python3 python3-pip python3-venv sqlite3 curl
+# 4. Update Sistem, Swap File, & Install Paket Dasar
+echo -e "\\n${BLUE}[1/8] Setup 4GB Swap File & Instalasi dependensi sistem (Python3, Node.js, Docker)...${NC}"
 
-# Pastikan Node.js 20.x terpasang (upgrade otomatis jika versi lama)
+# Setup 4GB Swap
+if free | awk '/^Swap:/ {exit !$2}'; then
+    echo -e "${GREEN}✔ Swap file sudah ada.${NC}"
+else
+    echo -e "${YELLOW}Membuat 4GB Swap file agar VPS 2GB tidak crash...${NC}"
+    sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    echo -e "${GREEN}✔ Swap file 4GB berhasil dibuat.${NC}"
+fi
+
+sudo apt-get update -y
+sudo apt-get install -y python3 python3-pip python3-venv sqlite3 curl docker.io docker-compose
+
+# Pastikan Node.js 20.x terpasang
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
@@ -255,6 +269,103 @@ pm2 save
 sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ${CURRENT_USER} --hp ${USER_HOME} &> /dev/null || true
 pm2 save
 
+# 8.5. Setup LibreNMS (Docker Compose)
+echo -e "\\n${BLUE}[8.5/9] Setup LibreNMS via Docker Compose...${NC}"
+mkdir -p /opt/librenms
+cd /opt/librenms
+
+# Buat docker-compose.yml untuk LibreNMS
+cat <<EOF_DOCKER > docker-compose.yml
+version: "3.5"
+
+services:
+  db:
+    image: mariadb:10.5
+    container_name: librenms_db
+    command:
+      - "mysqld"
+      - "--innodb-file-per-table=1"
+      - "--lower-case-table-names=0"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      - TZ=Asia/Jakarta
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=librenms
+      - MYSQL_USER=librenms
+      - MYSQL_PASSWORD=librenmspass
+    restart: always
+
+  redis:
+    image: redis:5.0-alpine
+    container_name: librenms_redis
+    environment:
+      - TZ=Asia/Jakarta
+    restart: always
+
+  librenms:
+    image: librenms/librenms:latest
+    container_name: librenms
+    hostname: librenms
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    ports:
+      - target: 8000
+        published: 8080
+        protocol: tcp
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=Asia/Jakarta
+      - PUID=1000
+      - PGID=1000
+      - DB_HOST=db
+      - DB_NAME=librenms
+      - DB_USER=librenms
+      - DB_PASSWORD=librenmspass
+      - DB_TIMEOUT=60
+    restart: always
+
+  dispatcher:
+    image: librenms/librenms:latest
+    container_name: librenms_dispatcher
+    hostname: librenms-dispatcher
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    depends_on:
+      - librenms
+      - db
+      - redis
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=Asia/Jakarta
+      - PUID=1000
+      - PGID=1000
+      - DB_HOST=db
+      - DB_NAME=librenms
+      - DB_USER=librenms
+      - DB_PASSWORD=librenmspass
+      - DB_TIMEOUT=60
+      - DISPATCHER_NODE_ID=dispatcher1
+      - SIDECAR_DISPATCHER=1
+    restart: always
+EOF_DOCKER
+
+echo -e "${YELLOW}Menjalankan LibreNMS Docker (Ini akan memakan waktu untuk pull image)...${NC}"
+sudo docker-compose up -d || sudo docker compose up -d
+echo -e "${GREEN}✔ LibreNMS berhasil dijalankan di port 8080.${NC}"
+
+# Kembalikan posisi direktori kerja ke folder bot
+cd ${INSTALL_DIR}
+
 # 9. Setup Nginx & Auto Let's Encrypt SSL
 echo -e "\\n${BLUE}[9/9] Setup Nginx Reverse Proxy & SSL (Let's Encrypt)...${NC}"
 sudo apt-get install -y nginx certbot python3-certbot-nginx
@@ -292,6 +403,7 @@ echo -e "${YELLOW}Status Services:${NC}"
 echo -e "  - Web Dashboard (PM2) : ${GREEN}Running${NC} (Cek dengan: pm2 status)"
 echo -e "  - Collector (Systemd) : ${GREEN}Running${NC} (Cek dengan: sudo systemctl status noc-collector)"
 echo -e "  - Telegram Bot (Systemd) : ${GREEN}Running${NC} (Cek dengan: sudo systemctl status noc-telegram-bot)"
+echo -e "  - LibreNMS (Docker) : ${GREEN}Running${NC} (Akses via IP_VPS:8080 - username admin/admin)"
 echo -e "${BLUE}=====================================================${NC}"
 """
     script_content = script_content.replace("{formatted_payload_placeholder}", formatted_payload)

@@ -204,6 +204,34 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
     SNMP Walk → dict {index: value_str}
     """
     results = {}
+    
+    # [PATCH] VSOL Firmware Bug Bypass:
+    # Firmware VSOL 1600GT melompati index secara buggy jika di-walk sekaligus.
+    # Kita pecah walk menjadi per-PON port (1 sampai 16).
+    if '37950.1.1.6.1.1' in base_oid:
+        for pon in range(1, 17):
+            pon_oid = f"{base_oid}.0.{pon}"
+            try:
+                for (errInd, errStat, errIdx, vBinds) in nextCmd(
+                    SnmpEngine(),
+                    CommunityData(community, mpModel=version),
+                    UdpTransportTarget((ip, port), timeout=0.5, retries=0),
+                    ContextData(),
+                    ObjectType(ObjectIdentity(pon_oid)),
+                    lexicographicMode=False
+                ):
+                    if errInd or errStat:
+                        break
+                    for vb in vBinds:
+                        oid_str = vb[0].prettyPrint()
+                        val_str = vb[1].prettyPrint()
+                        if val_str not in SNMP_SENTINEL:
+                            parts = oid_str.split('.')
+                            results[f"{parts[-2]}.{parts[-1]}"] = val_str
+            except Exception:
+                pass
+        return results
+
     try:
         for (errInd, errStat, errIdx, vBinds) in nextCmd(
             SnmpEngine(),
@@ -234,11 +262,6 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
                     else:
                         # OID lain di tabel status config
                         results[parts[-1]] = val_str
-
-                elif '37950.1.1.6.1.1' in oid_str:
-                    # VSOL: index = "port.onu"
-                    parts = oid_str.split('.')
-                    results[f"{parts[-2]}.{parts[-1]}"] = val_str
 
                 else:
                     # Default: ambil angka terakhir

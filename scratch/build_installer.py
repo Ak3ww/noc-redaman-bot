@@ -271,7 +271,8 @@ pm2 save
 
 # 8.5. Setup LibreNMS (Docker Compose)
 echo -e "\\n${BLUE}[8.5/9] Setup LibreNMS via Docker Compose...${NC}"
-mkdir -p /opt/librenms
+sudo mkdir -p /opt/librenms
+sudo chown -R ${CURRENT_USER}:${CURRENT_USER} /opt/librenms
 cd /opt/librenms
 
 # Buat docker-compose.yml untuk LibreNMS

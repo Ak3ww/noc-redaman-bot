@@ -51,7 +51,7 @@ echo -e "${GREEN}✔ Semua konfigurasi berhasil di-set secara otomatis.${NC}"
 # 3. Ekstrak Embedded Payload
 echo -e "\n${BLUE}[3/8] Mengekstrak file aplikasi NOC Redaman...${NC}"
 cat << 'EOF' | base64 -d | tar -xzf -
-H4sIAHboWmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
+H4sIAGXrWmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
 JorkUDCbhzNjNrs9Ozsz2n0YO7O9PXbWbM32vKzt2LHd39EP7HzCuntEZEbkDWDdWtUq6EIgM+7h
 7uHu4RdzzVz71Yl189S2hrb/wRv51Pgn72+ttr4Rf8fn9Vqj3viA3XzwFj6zILR86P6Dn+en8YCN
 Q2dst+rbDzbq2/X6g22zVtv+vLG5vvLB+8+f/WcwcV17EE58c3r7pvpApN7a2srG//p6Y7vR+KC+
@@ -10852,7 +10852,8 @@ pm2 save
 
 # 8.5. Setup LibreNMS (Docker Compose)
 echo -e "\n${BLUE}[8.5/9] Setup LibreNMS via Docker Compose...${NC}"
-mkdir -p /opt/librenms
+sudo mkdir -p /opt/librenms
+sudo chown -R ${CURRENT_USER}:${CURRENT_USER} /opt/librenms
 cd /opt/librenms
 
 # Buat docker-compose.yml untuk LibreNMS

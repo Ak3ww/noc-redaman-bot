@@ -370,7 +370,7 @@ cd ${INSTALL_DIR}
 echo -e "\\n${BLUE}[9/9] Setup Nginx Reverse Proxy & SSL (Let's Encrypt)...${NC}"
 sudo apt-get install -y nginx certbot python3-certbot-nginx
 
-# Buat konfigurasi Nginx
+# Konfigurasi Nginx untuk Bot Redaman
 cat <<EOF_NGINX | sudo tee /etc/nginx/sites-available/${DASH_DOMAIN} > /dev/null
 server {
     listen 80;
@@ -385,14 +385,34 @@ server {
 }
 EOF_NGINX
 
+# Konfigurasi Nginx untuk LibreNMS
+# Asumsi LibreNMS berjalan di subdomain 'nms.' dari DASH_DOMAIN, atau domain lain.
+# Untuk saat ini kita set LIBRE_DOMAIN dengan menambahkan prefix 'nms.' secara otomatis.
+LIBRE_DOMAIN="nms.${DASH_DOMAIN}"
+
+cat <<EOF_NGINX | sudo tee /etc/nginx/sites-available/${LIBRE_DOMAIN} > /dev/null
+server {
+    listen 80;
+    server_name ${LIBRE_DOMAIN};
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host \\$host;
+        proxy_set_header X-Real-IP \\$remote_addr;
+        proxy_set_header X-Forwarded-For \\$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \\$scheme;
+    }
+}
+EOF_NGINX
+
 # Aktifkan site
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/${DASH_DOMAIN} /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/${LIBRE_DOMAIN} /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
 
 # Install SSL Let's Encrypt
-echo -e "\\n${YELLOW}Sedang memproses SSL Let's Encrypt untuk ${DASH_DOMAIN}...${NC}"
-sudo certbot --nginx -d ${DASH_DOMAIN} --non-interactive --agree-tos --register-unsafely-without-email || true
+echo -e "\\n${YELLOW}Sedang memproses SSL Let's Encrypt untuk ${DASH_DOMAIN} dan ${LIBRE_DOMAIN}...${NC}"
+sudo certbot --nginx -d ${DASH_DOMAIN} -d ${LIBRE_DOMAIN} --non-interactive --agree-tos --register-unsafely-without-email || true
 echo -e "${GREEN}✔ Setup Nginx dan SSL selesai.${NC}"
 
 echo -e "\\n${GREEN}=====================================================${NC}"

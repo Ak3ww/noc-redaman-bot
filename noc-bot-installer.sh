@@ -51,7 +51,7 @@ echo -e "${GREEN}✔ Semua konfigurasi berhasil di-set secara otomatis.${NC}"
 # 3. Ekstrak Embedded Payload
 echo -e "\n${BLUE}[3/8] Mengekstrak file aplikasi NOC Redaman...${NC}"
 cat << 'EOF' | base64 -d | tar -xzf -
-H4sIAJDjWmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
+H4sIAMPmWmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
 JorkUDCbhzNjNrs9Ozsz2n0YO7O9PXbWbM32vKzt2LHd39EP7HzCuntEZEbkDWDdWtUq6EIgM+7h
 7uHu4RdzzVz71Yl189S2hrb/wRv51Pgn72+ttr4Rf8fn9Vqj3viA3XzwFj6zILR86P6Dn+en8YCN
 Q2dst+rbDzbq2/X6g22zVtv+vLG5vvLB+8+f/WcwcV17EE58c3r7pvpApN7a2srG//p6Y7vR+KC+
@@ -10951,7 +10951,7 @@ cd ${INSTALL_DIR}
 echo -e "\n${BLUE}[9/9] Setup Nginx Reverse Proxy & SSL (Let's Encrypt)...${NC}"
 sudo apt-get install -y nginx certbot python3-certbot-nginx
 
-# Buat konfigurasi Nginx
+# Konfigurasi Nginx untuk Bot Redaman
 cat <<EOF_NGINX | sudo tee /etc/nginx/sites-available/${DASH_DOMAIN} > /dev/null
 server {
     listen 80;
@@ -10966,14 +10966,34 @@ server {
 }
 EOF_NGINX
 
+# Konfigurasi Nginx untuk LibreNMS
+# Asumsi LibreNMS berjalan di subdomain 'nms.' dari DASH_DOMAIN, atau domain lain.
+# Untuk saat ini kita set LIBRE_DOMAIN dengan menambahkan prefix 'nms.' secara otomatis.
+LIBRE_DOMAIN="nms.${DASH_DOMAIN}"
+
+cat <<EOF_NGINX | sudo tee /etc/nginx/sites-available/${LIBRE_DOMAIN} > /dev/null
+server {
+    listen 80;
+    server_name ${LIBRE_DOMAIN};
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF_NGINX
+
 # Aktifkan site
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/${DASH_DOMAIN} /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/${LIBRE_DOMAIN} /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
 
 # Install SSL Let's Encrypt
-echo -e "\n${YELLOW}Sedang memproses SSL Let's Encrypt untuk ${DASH_DOMAIN}...${NC}"
-sudo certbot --nginx -d ${DASH_DOMAIN} --non-interactive --agree-tos --register-unsafely-without-email || true
+echo -e "\n${YELLOW}Sedang memproses SSL Let's Encrypt untuk ${DASH_DOMAIN} dan ${LIBRE_DOMAIN}...${NC}"
+sudo certbot --nginx -d ${DASH_DOMAIN} -d ${LIBRE_DOMAIN} --non-interactive --agree-tos --register-unsafely-without-email || true
 echo -e "${GREEN}✔ Setup Nginx dan SSL selesai.${NC}"
 
 echo -e "\n${GREEN}=====================================================${NC}"

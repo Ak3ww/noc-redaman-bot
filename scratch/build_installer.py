@@ -364,6 +364,14 @@ services:
     restart: always
 EOF_DOCKER
 
+echo -e "${YELLOW}Menyiapkan konfigurasi proxy LibreNMS...${NC}"
+mkdir -p data/config
+cat << 'EOF_PROXY' > data/config/proxy.php
+<?php
+$config['force_https'] = true;
+$config['trusted_proxies'] = ['*'];
+EOF_PROXY
+
 echo -e "${YELLOW}Menjalankan LibreNMS Docker (Ini akan memakan waktu untuk pull image)...${NC}"
 sudo docker-compose up -d || sudo docker compose up -d
 echo -e "${GREEN}✔ LibreNMS berhasil dijalankan di port 8080.${NC}"

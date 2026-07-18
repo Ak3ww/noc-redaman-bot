@@ -331,6 +331,8 @@ services:
       - DB_USER=librenms
       - DB_PASSWORD=librenmspass
       - DB_TIMEOUT=60
+      - APP_URL=https://${LIBRE_DOMAIN}
+      - BASE_URL=https://${LIBRE_DOMAIN}
     restart: always
 
   dispatcher:
@@ -357,6 +359,8 @@ services:
       - DB_TIMEOUT=60
       - DISPATCHER_NODE_ID=dispatcher1
       - SIDECAR_DISPATCHER=1
+      - APP_URL=https://${LIBRE_DOMAIN}
+      - BASE_URL=https://${LIBRE_DOMAIN}
     restart: always
 EOF_DOCKER
 

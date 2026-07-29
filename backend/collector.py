@@ -243,7 +243,7 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
             try:
                 for (errInd, errStat, errIdx, vBinds) in nextCmd(
                     SnmpEngine(), CommunityData(community, mpModel=version),
-                    UdpTransportTarget((ip, port), timeout=0.2, retries=0),
+                    UdpTransportTarget((ip, port), timeout=2.0, retries=1),
                     ContextData(), ObjectType(ObjectIdentity(pon_oid)), lexicographicMode=False
                 ):
                     if errInd or errStat: break

@@ -221,28 +221,39 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
     # - V1600GT menggunakan slot 0 (index .0.pon.onu)
     # - V1600GS menggunakan slot 1 (index .1.pon.onu)
     if '37950.1.1.6.1.1' in base_oid:
-        for slot in range(0, 2):  # slot 0 (V1600GT) dan slot 1 (V1600GS)
-            for pon in range(1, 17):
-                pon_oid = f"{base_oid}.{slot}.{pon}"
-                try:
-                    for (errInd, errStat, errIdx, vBinds) in nextCmd(
-                        SnmpEngine(),
-                        CommunityData(community, mpModel=version),
-                        UdpTransportTarget((ip, port), timeout=0.5, retries=0),
-                        ContextData(),
-                        ObjectType(ObjectIdentity(pon_oid)),
-                        lexicographicMode=False
-                    ):
-                        if errInd or errStat:
-                            break
-                        for vb in vBinds:
-                            oid_str = vb[0].prettyPrint()
-                            val_str = vb[1].prettyPrint()
-                            if val_str not in SNMP_SENTINEL:
-                                parts = oid_str.split('.')
-                                results[f"{parts[-2]}.{parts[-1]}"] = val_str
-                except Exception:
-                    pass
+        active_slot = 0
+        # Deteksi slot yang aktif (GT pakai 0, GS pakai 1) dengan 1x walk cepat
+        try:
+            for (errInd, errStat, errIdx, vBinds) in nextCmd(
+                SnmpEngine(), CommunityData(community, mpModel=version),
+                UdpTransportTarget((ip, port), timeout=1.0, retries=1),
+                ContextData(), ObjectType(ObjectIdentity(base_oid)), lexicographicMode=False
+            ):
+                if vBinds:
+                    oid_tuple = vBinds[0][0].asTuple()
+                    base_len = len(base_oid.split('.'))
+                    if len(oid_tuple) > base_len:
+                        active_slot = oid_tuple[base_len]
+                break  # Cuma butuh 1 baris pertama
+        except Exception:
+            pass
+
+        for pon in range(1, 17):
+            pon_oid = f"{base_oid}.{active_slot}.{pon}"
+            try:
+                for (errInd, errStat, errIdx, vBinds) in nextCmd(
+                    SnmpEngine(), CommunityData(community, mpModel=version),
+                    UdpTransportTarget((ip, port), timeout=0.2, retries=0),
+                    ContextData(), ObjectType(ObjectIdentity(pon_oid)), lexicographicMode=False
+                ):
+                    if errInd or errStat: break
+                    for vb in vBinds:
+                        val_str = vb[1].prettyPrint()
+                        if val_str not in SNMP_SENTINEL:
+                            parts = vb[0].prettyPrint().split('.')
+                            results[f"{parts[-2]}.{parts[-1]}"] = val_str
+            except Exception:
+                pass
         return results
 
     try:

@@ -2,6 +2,7 @@ import sqlite3
 import sys
 import os
 import difflib
+import re
 
 # Gunakan path dinamis agar jalan di VPS Ubuntu maupun Windows
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -9,7 +10,18 @@ sys.path.append(BASE_DIR)
 from mikrotik_client import get_mikrotik_data
 
 def clean_name(n):
-    return n.upper().replace('PELANGGAN:', '').strip()
+    # Hapus tulisan PELANGGAN:
+    n = n.upper().replace('PELANGGAN:', '').strip()
+    # Hapus spasi ganda
+    n = re.sub(r'\s+', ' ', n)
+    # Hapus tanda hubung ("-") di OLT agar sepadan dengan spasi di Mikrotik
+    # Tapi HANYA jika diapit huruf, misalnya "FERI-ANDRIANTO" -> "FERI ANDRIANTO"
+    n = re.sub(r'([A-Z])-([A-Z])', r'\1 \2', n)
+    # Hapus ID Pelanggan (angka di belakang nama, misal " - 830539")
+    n = re.sub(r'\s*-\s*\d+$', '', n)
+    # Hapus karakter aneh yang sering nyangkut
+    n = n.replace('|', '').strip()
+    return n
 
 DB_FILE = os.path.join(BASE_DIR, 'redaman.db')
 conn = sqlite3.connect(DB_FILE)

@@ -300,7 +300,10 @@ def get_mikrotik_data():
                 
                 r3 = _rest_session.get(f"{url}/ppp/secret", verify=False, timeout=5)
                 for item in r3.json():
-                    if item.get("comment") and item.get("name"): ppp_secrets[item["comment"].strip()] = item["name"]
+                    if item.get("comment") and item.get("name"):
+                        import re
+                        cmt = re.sub(r'\s*-\s*\d+$', '', item["comment"]).strip()
+                        ppp_secrets[cmt] = item["name"]
             except Exception:
                 _rest_session = None
                 raise
@@ -329,7 +332,10 @@ def get_mikrotik_data():
                 for sentence in secrets_reply:
                     if sentence[0] == "!re":
                         item = {w.split("=", 2)[1]: w.split("=", 2)[2] for w in sentence[1:] if w.startswith("=")}
-                        if item.get("comment") and item.get("name"): ppp_secrets[item["comment"].strip()] = item["name"]
+                        if item.get("comment") and item.get("name"):
+                            import re
+                            cmt = re.sub(r'\s*-\s*\d+$', '', item["comment"]).strip()
+                            ppp_secrets[cmt] = item["name"]
             except Exception:
                 _persistent_api.close()
                 _persistent_api = None

@@ -221,25 +221,26 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
     # - V1600GT menggunakan slot 0 (index .0.pon.onu)
     # - V1600GS menggunakan slot 1 (index .1.pon.onu)
     if '37950.1.1.6.1.1' in base_oid:
-        active_slot = 0
+        active_slots = [0, 1]  # Default fallback ke dua slot
         # Deteksi slot yang aktif (GT pakai 0, GS pakai 1) dengan 1x walk cepat
         try:
             for (errInd, errStat, errIdx, vBinds) in nextCmd(
                 SnmpEngine(), CommunityData(community, mpModel=version),
-                UdpTransportTarget((ip, port), timeout=1.0, retries=1),
+                UdpTransportTarget((ip, port), timeout=5.0, retries=1),
                 ContextData(), ObjectType(ObjectIdentity(base_oid)), lexicographicMode=False
             ):
-                if vBinds:
+                if not errInd and not errStat and vBinds:
                     oid_tuple = vBinds[0][0].asTuple()
                     base_len = len(base_oid.split('.'))
                     if len(oid_tuple) > base_len:
-                        active_slot = oid_tuple[base_len]
+                        active_slots = [oid_tuple[base_len]]
                 break  # Cuma butuh 1 baris pertama
         except Exception:
             pass
 
-        for pon in range(1, 17):
-            pon_oid = f"{base_oid}.{active_slot}.{pon}"
+        for slot in active_slots:
+            for pon in range(1, 17):
+                pon_oid = f"{base_oid}.{slot}.{pon}"
             try:
                 for (errInd, errStat, errIdx, vBinds) in nextCmd(
                     SnmpEngine(), CommunityData(community, mpModel=version),

@@ -1,13 +1,18 @@
 import sqlite3
 import sys
+import os
 import difflib
-sys.path.append('C:/BotRedaman/backend')
+
+# Gunakan path dinamis agar jalan di VPS Ubuntu maupun Windows
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
 from mikrotik_client import get_mikrotik_data
 
 def clean_name(n):
     return n.upper().replace('PELANGGAN:', '').strip()
 
-conn = sqlite3.connect('C:/BotRedaman/backend/redaman.db')
+DB_FILE = os.path.join(BASE_DIR, 'redaman.db')
+conn = sqlite3.connect(DB_FILE)
 c = conn.cursor()
 
 c.execute('SELECT onu_id, olt_id, customer_name, sn, pppoe_username FROM onu_name_cache')

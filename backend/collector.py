@@ -10,7 +10,17 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import json
-from pysnmp.hlapi import *
+try:
+    # pysnmp 4.x / 5.x API (lama) - digunakan jika tersedia
+    from pysnmp.hlapi import (
+        SnmpEngine, CommunityData, UdpTransportTarget, ContextData,
+        ObjectType, ObjectIdentity, nextCmd, bulkCmd, getCmd
+    )
+    PYSNMP_V6 = False
+except ImportError:
+    # pysnmp 6.x API (baru) - fallback
+    from pysnmp.hlapi.v1arch.asyncio import *
+    PYSNMP_V6 = True
 from mikrotik_client import get_mikrotik_data
 
 # ── Konfigurasi ──────────────────────────────────────────────────────────────

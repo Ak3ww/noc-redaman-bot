@@ -216,11 +216,14 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
     results = {}
     
     # [PATCH] VSOL Firmware Bug Bypass:
-    # Firmware VSOL 1600GT melompati index secara buggy jika di-walk sekaligus.
-    # Kita pecah walk menjadi per-PON port (1 sampai 16).
+    # Firmware VSOL melompati index secara buggy jika di-walk sekaligus.
+    # Kita pecah walk menjadi per-SLOT per-PON port.
+    # - V1600GT menggunakan slot 0 (index .0.pon.onu)
+    # - V1600GS menggunakan slot 1 (index .1.pon.onu)
     if '37950.1.1.6.1.1' in base_oid:
-        for pon in range(1, 17):
-            pon_oid = f"{base_oid}.0.{pon}"
+        for slot in range(0, 2):  # slot 0 (V1600GT) dan slot 1 (V1600GS)
+            for pon in range(1, 17):
+                pon_oid = f"{base_oid}.{slot}.{pon}"
             try:
                 for (errInd, errStat, errIdx, vBinds) in nextCmd(
                     SnmpEngine(),

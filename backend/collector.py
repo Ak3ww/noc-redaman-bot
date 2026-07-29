@@ -221,8 +221,9 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
     # - V1600GT menggunakan slot 0 (index .0.pon.onu)
     # - V1600GS menggunakan slot 1 (index .1.pon.onu)
     if '37950.1.1.6.1.1' in base_oid:
-        active_slots = [0, 1]  # Default fallback ke dua slot
-        # Deteksi slot yang aktif (GT pakai 0, GS pakai 1) dengan 1x walk cepat
+        active_slots = [0, 1]
+        has_slot_in_oid = True
+        
         try:
             for (errInd, errStat, errIdx, vBinds) in nextCmd(
                 SnmpEngine(), CommunityData(community, mpModel=version),
@@ -232,29 +233,43 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
                 if not errInd and not errStat and vBinds:
                     oid_tuple = vBinds[0][0].asTuple()
                     base_len = len(base_oid.split('.'))
-                    if len(oid_tuple) > base_len:
+                    diff_len = len(oid_tuple) - base_len
+                    if diff_len == 2:
+                        # Struktur hanya PON.ONU (tanpa slot), misal V1600GS Name OID
+                        has_slot_in_oid = False
+                    elif diff_len >= 3:
+                        # Struktur SLOT.PON.ONU
+                        has_slot_in_oid = True
                         active_slots = [oid_tuple[base_len]]
-                break  # Cuma butuh 1 baris pertama
+                break
         except Exception:
             pass
 
-        for slot in active_slots:
+        # Bangun daftar PON OID yang akan di-walk satu per satu
+        pon_oids = []
+        if has_slot_in_oid:
+            for slot in active_slots:
+                for pon in range(1, 17):
+                    pon_oids.append(f"{base_oid}.{slot}.{pon}")
+        else:
             for pon in range(1, 17):
-                pon_oid = f"{base_oid}.{slot}.{pon}"
-                try:
-                    for (errInd, errStat, errIdx, vBinds) in nextCmd(
-                        SnmpEngine(), CommunityData(community, mpModel=version),
-                        UdpTransportTarget((ip, port), timeout=2.0, retries=1),
-                        ContextData(), ObjectType(ObjectIdentity(pon_oid)), lexicographicMode=False
-                    ):
-                        if errInd or errStat: break
-                        for vb in vBinds:
-                            val_str = vb[1].prettyPrint()
-                            if val_str not in SNMP_SENTINEL:
-                                parts = vb[0].prettyPrint().split('.')
-                                results[f"{parts[-2]}.{parts[-1]}"] = val_str
-                except Exception:
-                    pass
+                pon_oids.append(f"{base_oid}.{pon}")
+
+        for pon_oid in pon_oids:
+            try:
+                for (errInd, errStat, errIdx, vBinds) in nextCmd(
+                    SnmpEngine(), CommunityData(community, mpModel=version),
+                    UdpTransportTarget((ip, port), timeout=2.0, retries=1),
+                    ContextData(), ObjectType(ObjectIdentity(pon_oid)), lexicographicMode=False
+                ):
+                    if errInd or errStat: break
+                    for vb in vBinds:
+                        val_str = vb[1].prettyPrint()
+                        if val_str not in SNMP_SENTINEL:
+                            parts = vb[0].prettyPrint().split('.')
+                            results[f"{parts[-2]}.{parts[-1]}"] = val_str
+            except Exception:
+                pass
         return results
 
     try:
@@ -835,6 +850,16 @@ def _pull_data_and_alert_impl(conn):
                 name_val = get_snmp_get(ip, port, community, f"{cfg['name']}.{onu_idx}", version=cfg["vsnmp"])
                 sn_val   = get_snmp_get(ip, port, community, f"{cfg['sn']}.{onu_idx}",   version=cfg["vsnmp"])
                 ver_val  = get_snmp_get(ip, port, community, f"{cfg['version']}.{onu_idx}", version=cfg["vsnmp"])
+                
+                # VSOL Fallback: coba inject slot 0 atau 1 jika gagal (karena onu_idx hanya PON.ONU)
+                if not name_val and olt_brand == "VSOL":
+                    for s in [0, 1]:
+                        name_val = get_snmp_get(ip, port, community, f"{cfg['name']}.{s}.{onu_idx}", version=cfg["vsnmp"])
+                        if name_val:
+                            sn_val   = get_snmp_get(ip, port, community, f"{cfg['sn']}.{s}.{onu_idx}",   version=cfg["vsnmp"])
+                            ver_val  = get_snmp_get(ip, port, community, f"{cfg['version']}.{s}.{onu_idx}", version=cfg["vsnmp"])
+                            break
+
                 customer = (name_val or f"ONU-{onu_idx}").strip()
                 cursor.execute(
                     'INSERT OR REPLACE INTO onu_name_cache (onu_id, olt_id, customer_name, sn, firmware_version, last_updated) VALUES (?,?,?,?,?,?)',

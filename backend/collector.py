@@ -241,20 +241,20 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
         for slot in active_slots:
             for pon in range(1, 17):
                 pon_oid = f"{base_oid}.{slot}.{pon}"
-            try:
-                for (errInd, errStat, errIdx, vBinds) in nextCmd(
-                    SnmpEngine(), CommunityData(community, mpModel=version),
-                    UdpTransportTarget((ip, port), timeout=2.0, retries=1),
-                    ContextData(), ObjectType(ObjectIdentity(pon_oid)), lexicographicMode=False
-                ):
-                    if errInd or errStat: break
-                    for vb in vBinds:
-                        val_str = vb[1].prettyPrint()
-                        if val_str not in SNMP_SENTINEL:
-                            parts = vb[0].prettyPrint().split('.')
-                            results[f"{parts[-2]}.{parts[-1]}"] = val_str
-            except Exception:
-                pass
+                try:
+                    for (errInd, errStat, errIdx, vBinds) in nextCmd(
+                        SnmpEngine(), CommunityData(community, mpModel=version),
+                        UdpTransportTarget((ip, port), timeout=2.0, retries=1),
+                        ContextData(), ObjectType(ObjectIdentity(pon_oid)), lexicographicMode=False
+                    ):
+                        if errInd or errStat: break
+                        for vb in vBinds:
+                            val_str = vb[1].prettyPrint()
+                            if val_str not in SNMP_SENTINEL:
+                                parts = vb[0].prettyPrint().split('.')
+                                results[f"{parts[-2]}.{parts[-1]}"] = val_str
+                except Exception:
+                    pass
         return results
 
     try:

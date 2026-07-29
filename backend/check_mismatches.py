@@ -72,13 +72,19 @@ for onu_id, olt_id, customer_name, sn, pppoe in olt_records:
     c.execute('SELECT name FROM olts WHERE id=?', (olt_id,))
     olt_str = c.fetchone()[0]
     
+    # Ambil status dari alert_states
+    c.execute('SELECT status FROM alert_states WHERE onu_id=? AND olt_id=?', (onu_id, olt_id))
+    row_status = c.fetchone()
+    status = row_status[0] if row_status else "UNKNOWN"
+    
     unmatched.append({
         'olt': olt_str,
         'port': onu_id,
         'olt_name': customer_name,
         'closest_mikrotik': best_match,
         'ratio': best_ratio,
-        'sn': sn
+        'sn': sn,
+        'status': status
     })
 
 # Sort by ratio descending so we see the obvious typos first
@@ -91,7 +97,7 @@ for u in unmatched:
         count += 1
     else:
         # Ratio is too low, probably completely missing from Mikrotik
-        print(f"[{u['olt']} Port {u['port']}] OLT: '{u['olt_name']}' --> TIDAK ADA DI MIKROTIK SAMA SEKALI! (Paling mirip: '{u['closest_mikrotik']}')")
+        print(f"[{u['olt']} Port {u['port']}] OLT: '{u['olt_name']}' --> TIDAK ADA DI MIKROTIK (Status: {u['status']}, SN: {u['sn']})")
         count += 1
 
 print(f"\nTotal Unmatched/Typo: {count}")

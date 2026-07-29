@@ -51,7 +51,7 @@ echo -e "${GREEN}✔ Semua konfigurasi berhasil di-set secara otomatis.${NC}"
 # 3. Ekstrak Embedded Payload
 echo -e "\n${BLUE}[3/8] Mengekstrak file aplikasi NOC Redaman...${NC}"
 cat << 'EOF' | base64 -d | tar -xzf -
-H4sIAOD1WmoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
+H4sIAAZ8aWoC/+y923IjR5IoqGea6R9C0JGQaIFJALyV0EKpUSSrii3ehkBJ3cvmgRJAksxCIgFl
 JorkUDCbhzNjNrs9Ozsz2n0YO7O9PXbWbM32vKzt2LHd39EP7HzCuntEZEbkDWDdWtUq6EIgM+7h
 7uHu4RdzzVz71Yl189S2hrb/wRv51Pgn72+ttr4Rf8fn9Vqj3viA3XzwFj6zILR86P6Dn+en8YCN
 Q2dst+rbDzbq2/X6g22zVtv+vLG5vvLB+8+f/WcwcV17EE58c3r7pvpApN7a2srG//p6Y7vR+KC+
@@ -10756,8 +10756,8 @@ conn.execute('''CREATE TABLE IF NOT EXISTS olts (
 if conn.execute('SELECT count(*) FROM olts').fetchone()[0] == 0:
     conn.executemany('INSERT INTO olts (name, ip_port, brand, community) VALUES (?,?,?,?)', [
         ('HSGQ-G02ID', '103.157.79.178:1611', 'HSGQ', 'public'),
-        ('VSOL-GPON', '192.168.30.6:161', 'VSOL', 'public'),
-        ('VSOL-1600GT', '192.168.30.7:1615', 'VSOL', 'public')
+        ('VSOL-GPON', '103.157.79.178:1614', 'VSOL', 'public'),
+        ('VSOL-1600GT', '103.157.79.178:1615', 'VSOL', 'public')
     ])
 conn.commit()
 conn.close()
@@ -10801,9 +10801,9 @@ After=network.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-WorkingDirectory=${INSTALL_DIR}
+WorkingDirectory=${INSTALL_DIR}/backend
 Environment="PYTHONIOENCODING=utf-8"
-ExecStart=${INSTALL_DIR}/venv/bin/python collector.py
+ExecStart=${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/backend/collector.py
 Restart=always
 RestartSec=5
 
@@ -10820,9 +10820,9 @@ After=network.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-WorkingDirectory=${INSTALL_DIR}
+WorkingDirectory=${INSTALL_DIR}/backend
 Environment="PYTHONIOENCODING=utf-8"
-ExecStart=${INSTALL_DIR}/venv/bin/python telegram_bot.py
+ExecStart=${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/backend/telegram_bot.py
 Restart=always
 RestartSec=5
 

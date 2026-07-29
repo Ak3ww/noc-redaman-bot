@@ -175,8 +175,8 @@ conn.execute('''CREATE TABLE IF NOT EXISTS olts (
 if conn.execute('SELECT count(*) FROM olts').fetchone()[0] == 0:
     conn.executemany('INSERT INTO olts (name, ip_port, brand, community) VALUES (?,?,?,?)', [
         ('HSGQ-G02ID', '103.157.79.178:1611', 'HSGQ', 'public'),
-        ('VSOL-GPON', '192.168.30.6:161', 'VSOL', 'public'),
-        ('VSOL-1600GT', '192.168.30.7:1615', 'VSOL', 'public')
+        ('VSOL-GPON', '103.157.79.178:1614', 'VSOL', 'public'),
+        ('VSOL-1600GT', '103.157.79.178:1615', 'VSOL', 'public')
     ])
 conn.commit()
 conn.close()
@@ -220,9 +220,9 @@ After=network.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-WorkingDirectory=${INSTALL_DIR}
+WorkingDirectory=${INSTALL_DIR}/backend
 Environment="PYTHONIOENCODING=utf-8"
-ExecStart=${INSTALL_DIR}/venv/bin/python collector.py
+ExecStart=${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/backend/collector.py
 Restart=always
 RestartSec=5
 
@@ -239,9 +239,9 @@ After=network.target
 [Service]
 Type=simple
 User=${CURRENT_USER}
-WorkingDirectory=${INSTALL_DIR}
+WorkingDirectory=${INSTALL_DIR}/backend
 Environment="PYTHONIOENCODING=utf-8"
-ExecStart=${INSTALL_DIR}/venv/bin/python telegram_bot.py
+ExecStart=${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/backend/telegram_bot.py
 Restart=always
 RestartSec=5
 

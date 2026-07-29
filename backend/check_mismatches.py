@@ -27,6 +27,9 @@ for comment, secret in secrets.items():
         m_name = clean_name(comment)
         mikrotik_names[m_name] = secret
 
+print(f"DEBUG: Ditemukan {len(secrets)} secrets dari Mikrotik.")
+print(f"DEBUG: Ditemukan {len(mikrotik_names)} komentar valid dari Mikrotik.")
+
 print("=== DAFTAR NAMA DI OLT YANG TIDAK DITEMUKAN / TYPO DI MIKROTIK ===")
 unmatched = []
 

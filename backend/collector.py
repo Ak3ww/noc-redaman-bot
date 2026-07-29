@@ -224,25 +224,25 @@ def get_snmp_walk(ip, port, community, base_oid, version=0):
         for slot in range(0, 2):  # slot 0 (V1600GT) dan slot 1 (V1600GS)
             for pon in range(1, 17):
                 pon_oid = f"{base_oid}.{slot}.{pon}"
-            try:
-                for (errInd, errStat, errIdx, vBinds) in nextCmd(
-                    SnmpEngine(),
-                    CommunityData(community, mpModel=version),
-                    UdpTransportTarget((ip, port), timeout=0.5, retries=0),
-                    ContextData(),
-                    ObjectType(ObjectIdentity(pon_oid)),
-                    lexicographicMode=False
-                ):
-                    if errInd or errStat:
-                        break
-                    for vb in vBinds:
-                        oid_str = vb[0].prettyPrint()
-                        val_str = vb[1].prettyPrint()
-                        if val_str not in SNMP_SENTINEL:
-                            parts = oid_str.split('.')
-                            results[f"{parts[-2]}.{parts[-1]}"] = val_str
-            except Exception:
-                pass
+                try:
+                    for (errInd, errStat, errIdx, vBinds) in nextCmd(
+                        SnmpEngine(),
+                        CommunityData(community, mpModel=version),
+                        UdpTransportTarget((ip, port), timeout=0.5, retries=0),
+                        ContextData(),
+                        ObjectType(ObjectIdentity(pon_oid)),
+                        lexicographicMode=False
+                    ):
+                        if errInd or errStat:
+                            break
+                        for vb in vBinds:
+                            oid_str = vb[0].prettyPrint()
+                            val_str = vb[1].prettyPrint()
+                            if val_str not in SNMP_SENTINEL:
+                                parts = oid_str.split('.')
+                                results[f"{parts[-2]}.{parts[-1]}"] = val_str
+                except Exception:
+                    pass
         return results
 
     try:

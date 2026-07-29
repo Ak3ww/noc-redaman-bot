@@ -23,7 +23,7 @@ active, queues, secrets = get_mikrotik_data()
 # Prepare Mikrotik names
 mikrotik_names = {}
 for comment, secret in secrets.items():
-    if secret.upper().startswith('EMG'):
+    if comment:  # Pastikan comment tidak kosong
         m_name = clean_name(comment)
         mikrotik_names[m_name] = secret
 
